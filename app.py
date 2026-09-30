@@ -1,4 +1,4 @@
-"""Trust Receipt — Flask app. Run: python app.py  (mock mode needs no API key)."""
+"""Veritas — Flask app. Run: python app.py  (mock mode needs no API key)."""
 import glob
 import os
 

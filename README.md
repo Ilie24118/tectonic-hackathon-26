@@ -1,4 +1,4 @@
-# Trust Receipt — answers that show their work
+# Veritas — answers that show their work
 
 **Team Alpha** · Tectonic Hackathon 2026
 

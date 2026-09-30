@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**Trust Receipt** — a Flask hackathon PoC (SD Worx). You import PDFs; the app answers questions over
+**Veritas** — a Flask hackathon PoC (SD Worx). You import PDFs; the app answers questions over
 them and attaches a "receipt": each claim cites a source, and each source shows deterministic trust
 signals (freshness, owner, scope, conflicts) plus a plain verdict. See `README.md` for the product
 pitch and demo flow.
