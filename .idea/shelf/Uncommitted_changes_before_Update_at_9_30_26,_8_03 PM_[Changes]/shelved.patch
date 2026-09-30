@@ -1,0 +1,16 @@
+Index: README.md
+===================================================================
+diff --git a/README.md b/README.md
+deleted file mode 100644
+--- a/README.md	(revision ff91d8802b4405651200e4dca4651c5a917c4282)
++++ /dev/null	(revision ff91d8802b4405651200e4dca4651c5a917c4282)
+@@ -1,8 +0,0 @@
+-Hackaton Tectonic challenge 2: SdWorx
+-
+-# Problem
+-1. Multiple sources of data each one saying different things,
+-There is no reliable of checking which one is true.
+-
+-# Solution 
+-verify data with some metrics to confirm which data is up-to-date and True
+\ No newline at end of file
