@@ -1,0 +1,23 @@
+[
+  {
+    "doc_a": "be-holiday-pay-procedure",
+    "doc_b": "payroll-faq-old-sharepoint",
+    "topic": "reference period for departure holiday pay",
+    "snippet_a": "The reference period is the qualifying year (N-1) for already-vested rights plus the running current year (N) pro-rata.",
+    "snippet_b": "Double holiday pay on departure is calculated on the current calendar year's earnings only; the previous year is not relevant."
+  },
+  {
+    "doc_a": "be-sick-leave-reporting",
+    "doc_b": "be-sick-leave-old",
+    "topic": "deadline to notify the employer of illness",
+    "snippet_a": "Notify the manager on the first day of absence, within one working day.",
+    "snippet_b": "Notification should be given within two working days of the first day of absence."
+  },
+  {
+    "doc_a": "be-end-of-year-premium",
+    "doc_b": "be-eoy-premium-analysis-2023",
+    "topic": "seniority threshold for the end-of-year premium",
+    "snippet_a": "An employee must have at least 6 months of seniority in the reference year to receive a pro-rata premium.",
+    "snippet_b": "A pro-rata end-of-year premium is due once an employee reaches 3 months of seniority."
+  }
+]

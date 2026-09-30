@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Trust Receipt{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('home') }}">
+      <span class="logo">✔︎</span>
+      <span class="brand-text">
+        <strong>Trust Receipt</strong>
+        <em>Find it. Understand it. Trust it.</em>
+      </span>
+    </a>
+    <nav>
+      <a href="{{ url_for('home') }}">Ask</a>
+      <a href="{{ url_for('radar') }}">Conflict Radar</a>
+      <a href="{{ url_for('reset') }}" class="reset">Reset demo</a>
+      {% if mock %}<span class="mode-badge" title="No API key — canned answers">MOCK MODE</span>{% endif %}
+    </nav>
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

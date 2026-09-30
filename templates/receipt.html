@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Trust Receipt — answer{% endblock %}
+{% block content %}
+<section class="answer-page">
+
+  <form action="{{ url_for('ask') }}" method="get" class="askbox slim">
+    <textarea name="q" rows="2">{{ question }}</textarea>
+    <input type="hidden" name="country" value="{{ ctx.country or '' }}">
+    <input type="hidden" name="client" value="{{ ctx.client or '' }}">
+    <button type="submit">Re-run ↻</button>
+  </form>
+
+  <div class="lens">
+    <span class="lens-label">Context Lens</span>
+    <span class="chip-ctx">🌍 {{ ctx.country or 'any country' }}</span>
+    <span class="chip-ctx">🏢 {{ ctx.client or 'any client' }}</span>
+    <span class="lens-note">Answer scoped to this context. Out-of-scope sources are shown but not used.</span>
+  </div>
+
+  <div class="compare-toggle">
+    <span>View:</span>
+    <button id="btn-plain" class="toggle" onclick="showMode('plain')">Plain AI answer</button>
+    <button id="btn-receipt" class="toggle active" onclick="showMode('receipt')">Answer with receipt</button>
+  </div>
+
+  <!-- PLAIN -->
+  <div id="mode-plain" class="answer-card plain-answer" style="display:none">
+    <p>{{ plain }}</p>
+    <p class="plain-warn">⚠️ No sources, no trust signals, no scope. You can’t tell what’s reliable.</p>
+  </div>
+
+  <!-- RECEIPT -->
+  <div id="mode-receipt">
+    <div class="answer-card">
+      {% for s in sentences %}
+        <span class="sentence">{{ s.text }}{% for n in s.nums %}<a class="cite" href="#source-{{ n }}"
+          onclick="flash({{ n }})">[{{ n }}]</a>{% endfor %}</span>
+      {% endfor %}
+
+      {% if gaps %}
+      <div class="gaps">
+        <h4>⚠︎ What I could not confirm</h4>
+        <ul>{% for g in gaps %}<li>{{ g }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+
+      {% if out_of_scope_notes %}
+      <div class="oos-notes">
+        {% for n in out_of_scope_notes %}<p>🚫 {{ n }}</p>{% endfor %}
+      </div>
+      {% endif %}
+
+      {% if experts %}
+      <div class="experts">
+        <h4>👥 Who knows this</h4>
+        {% for e in experts %}
+          <p><strong>{{ e.name }}</strong> — {{ e.team }}. {{ e.why }}.
+             <a href="mailto:{{ e.email }}">{{ e.email }}</a></p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <h3 class="sources-h">Sources &amp; trust signals</h3>
+    <div class="sources">
+      {% for c in cards %}
+      <div class="source-card {{ 'oos' if not c.scope.matches }} verdict-{{ c.verdict.level }}"
+           id="source-{{ c.num }}">
+        <div class="source-head">
+          <span class="source-num">{{ c.num }}</span>
+          <span class="source-title">{{ c.title }}{% if c.version %} <em>v{{ c.version }}</em>{% endif %}</span>
+          <span class="type-tag type-{{ c.source_type }}">{{ c.source_type }}</span>
+          {% if c.superseded %}<span class="superseded-tag">SUPERSEDED</span>{% endif %}
+        </div>
+
+        <ul class="signals">
+          <li class="sig sig-{{ c.verification.level }}">
+            <span class="sig-icon">{{ c.verification.icon }}</span>
+            <span><strong>{{ c.verification.label }}</strong><br><small>{{ c.verification.detail }}</small></span>
+          </li>
+          <li class="sig sig-{{ c.owner.level }}">
+            <span class="sig-icon">{{ c.owner.icon }}</span>
+            <span><strong>{{ c.owner.label }}</strong>{% if c.owner.detail %}<br><small>{{ c.owner.detail }}</small>{% endif %}</span>
+          </li>
+          <li class="sig sig-{{ c.scope.level }}">
+            <span class="sig-icon">{{ c.scope.icon }}</span>
+            <span><strong>{{ c.scope.label }}</strong><br><small>{{ c.scope.detail }}</small></span>
+          </li>
+        </ul>
+
+        {% for cf in c.conflicts %}
+        <div class="conflict {{ 'resolved' if cf.resolved }}">
+          <div class="conflict-head">⚡ {% if cf.resolved %}Resolved conflict{% else %}Conflicts with [{{ cf.with }}]{% endif %}
+            — <em>{{ cf.topic }}</em></div>
+          <div class="conflict-snips">
+            <div class="snip mine"><span class="snip-label">This source [{{ c.num }}]</span>{{ cf.mine }}</div>
+            <div class="snip theirs"><span class="snip-label">Source [{{ cf.with }}]</span>{{ cf.theirs }}</div>
+          </div>
+          {% if not cf.resolved and c.owner.label != 'No owner' %}
+          <form action="{{ url_for('flag') }}" method="post" class="ask-owner">
+            <input type="hidden" name="doc_id" value="{{ c.id }}">
+            <input type="hidden" name="conflict_with" value="{{ cards[cf.with-1].id }}">
+            <input type="hidden" name="owner" value="{{ c.owner.label }}">
+            <input type="hidden" name="topic" value="{{ cf.topic }}">
+            <input type="hidden" name="snippet_a" value="{{ cf.mine }}">
+            <input type="hidden" name="snippet_b" value="{{ cf.theirs }}">
+            <input type="hidden" name="doc_version" value="{{ c.version or 1 }}">
+            <input type="hidden" name="teams_note" value="{{ teams_note }}">
+            <input type="hidden" name="question" value="{{ question }}">
+            <input type="hidden" name="country" value="{{ ctx.country or '' }}">
+            <input type="hidden" name="client" value="{{ ctx.client or '' }}">
+            <button type="submit">Ask {{ c.owner.label }} to resolve →</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="verdict verdict-pill-{{ c.verdict.level }}">
+          <strong>{{ c.verdict.label }}</strong> — {{ c.verdict.reason }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<script>
+function showMode(m){
+  document.getElementById('mode-plain').style.display = m==='plain'?'block':'none';
+  document.getElementById('mode-receipt').style.display = m==='receipt'?'block':'none';
+  document.getElementById('btn-plain').classList.toggle('active', m==='plain');
+  document.getElementById('btn-receipt').classList.toggle('active', m==='receipt');
+}
+function flash(n){
+  var el=document.getElementById('source-'+n);
+  if(!el) return;
+  el.classList.add('flash');
+  setTimeout(function(){el.classList.remove('flash')},1500);
+}
+</script>
+{% endblock %}

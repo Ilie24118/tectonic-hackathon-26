@@ -1,0 +1,65 @@
+[
+  {
+    "name": "An Peeters",
+    "team": "Payroll BE",
+    "countries": ["BE"],
+    "topics": ["holiday pay", "end-of-year premium", "client rules"],
+    "email": "an.peeters@sdworx.example"
+  },
+  {
+    "name": "Marie Dubois",
+    "team": "Payroll BE",
+    "countries": ["BE"],
+    "topics": ["payroll cut-off", "meal vouchers"],
+    "email": "marie.dubois@sdworx.example"
+  },
+  {
+    "name": "Koen Willems",
+    "team": "HR Operations BE",
+    "countries": ["BE"],
+    "topics": ["sick leave", "onboarding", "time credit"],
+    "email": "koen.willems@sdworx.example"
+  },
+  {
+    "name": "Jonas Maes",
+    "team": "Payroll BE",
+    "countries": ["BE"],
+    "topics": ["holiday pay", "legislation changes"],
+    "email": "jonas.maes@sdworx.example"
+  },
+  {
+    "name": "Thomas Janssens",
+    "team": "Reward BE",
+    "countries": ["BE"],
+    "topics": ["mobility budget", "company car"],
+    "email": "thomas.janssens@sdworx.example"
+  },
+  {
+    "name": "Sanne de Vries",
+    "team": "Payroll NL",
+    "countries": ["NL"],
+    "topics": ["holiday allowance", "30% ruling"],
+    "email": "sanne.devries@sdworx.example"
+  },
+  {
+    "name": "Bram Koster",
+    "team": "Payroll NL",
+    "countries": ["NL"],
+    "topics": ["30% ruling", "expat payroll"],
+    "email": "bram.koster@sdworx.example"
+  },
+  {
+    "name": "Lena Aerts",
+    "team": "HR Operations BE",
+    "countries": ["BE"],
+    "topics": ["onboarding", "dimona"],
+    "email": "lena.aerts@sdworx.example"
+  },
+  {
+    "name": "Tom Verhoeven",
+    "team": "Payroll BE",
+    "countries": ["BE"],
+    "topics": ["client onboarding", "sick leave"],
+    "email": "tom.verhoeven@sdworx.example"
+  }
+]

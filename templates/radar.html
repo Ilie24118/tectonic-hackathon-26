@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Conflict Radar{% endblock %}
+{% block content %}
+<section class="radar-page">
+  <h1>📡 Conflict Radar</h1>
+  <p class="sub">Every question asked makes the knowledge base more trustworthy. Here’s what needs attention.</p>
+
+  <h2>⚡ Conflicts ({{ conflicts|length }})</h2>
+  <div class="radar-list">
+    {% for c in conflicts %}
+    <div class="radar-item {{ 'resolved' if c.resolved }}">
+      <div class="radar-title">{{ c.topic }} {% if c.resolved %}<span class="ok">resolved</span>{% endif %}</div>
+      <div class="conflict-snips">
+        <div class="snip mine"><span class="snip-label">{{ c.doc_a }}</span>{{ c.snippet_a }}</div>
+        <div class="snip theirs"><span class="snip-label">{{ c.doc_b }}</span>{{ c.snippet_b }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>👤 Orphaned docs — nobody accountable ({{ orphans|length }})</h2>
+  <div class="radar-list">
+    {% for o in orphans %}
+    <div class="radar-item">
+      <div class="radar-title">{{ o.title }}</div>
+      <small>{{ o.verification.detail }} · scope {{ o.scope.label }}</small>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>❌ Stale / never-verified docs ({{ stale|length }})</h2>
+  <div class="radar-list">
+    {% for s in stale %}
+    <div class="radar-item">
+      <div class="radar-title">{{ s.title }} <em>v{{ s.version }}</em></div>
+      <small>{{ s.verification.label }} · {{ s.verification.detail }} · owner {{ s.owner.label }}</small>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

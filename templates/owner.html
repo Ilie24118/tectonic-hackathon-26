@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Owner inbox — {{ name }}{% endblock %}
+{% block content %}
+<section class="owner-page">
+  <h1>📥 Owner inbox — {{ name }}</h1>
+  <p class="sub">Requests where your knowledge closes a gap. Confirming makes the receipt turn green
+     for everyone who asks next.</p>
+
+  {% if not requests %}
+    <p class="empty">Nothing here right now. <a href="{{ url_for('home') }}">Back to Ask</a>.</p>
+  {% endif %}
+
+  {% for r in requests %}
+  <div class="req req-{{ r.status }}">
+    <div class="req-head">
+      <span class="req-status">{{ r.status.replace('_',' ') }}</span>
+      <strong>Conflict on {{ r.topic }}</strong>
+    </div>
+
+    <div class="conflict-snips">
+      <div class="snip mine"><span class="snip-label">Your doc: {{ r.doc_id }}</span>{{ r.snippet_a }}</div>
+      <div class="snip theirs"><span class="snip-label">Conflicting: {{ r.conflict_with }}</span>{{ r.snippet_b }}</div>
+    </div>
+
+    {% if r.status == 'open' %}
+    <div class="req-actions">
+      <form action="{{ url_for('resolve', name=name) }}" method="post">
+        <input type="hidden" name="req_id" value="{{ r.id }}">
+        <input type="hidden" name="action" value="confirm">
+        <button class="btn-confirm" type="submit">✅ Confirm my doc is correct</button>
+      </form>
+      <form action="{{ url_for('resolve', name=name) }}" method="post">
+        <input type="hidden" name="req_id" value="{{ r.id }}">
+        <input type="hidden" name="action" value="dismiss">
+        <button class="btn-dismiss" type="submit">🙅 Not my area</button>
+      </form>
+    </div>
+
+    <form action="{{ url_for('resolve', name=name) }}" method="post" class="update-form">
+      <input type="hidden" name="req_id" value="{{ r.id }}">
+      <input type="hidden" name="action" value="update">
+      <label>✍️ Update my doc (append this change):</label>
+      <textarea name="append_text" rows="3">{{ r.teams_note }}</textarea>
+      <button class="btn-update" type="submit">Save update &amp; re-verify</button>
+    </form>
+    {% else %}
+    <p class="resolution">✔ {{ r.resolution }}
+      {% if r.question %}<a href="{{ url_for('ask', q=r.question, country=r.country, client=r.client) }}">
+        See the updated receipt →</a>{% endif %}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}
