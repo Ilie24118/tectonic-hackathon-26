@@ -2,6 +2,8 @@
 
 **Team Alpha** · Tectonic Hackathon 2026 · for SD Worx
 
+🔗 **Live demo:** <https://tectonic-hackathon-26.vercel.app/>
+
 Import your PDFs, ask a question, get an answer with a **receipt**: every claim links to its
 source, and every source shows plain trust signals — is it fresh, who owns it, does it apply
 here, does it conflict with anything else.
