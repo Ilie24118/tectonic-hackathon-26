@@ -156,18 +156,21 @@ def build_receipt(item, ctx, state=None):
 
 
 if __name__ == "__main__":
-    from trust.retrieval import get_index
-    idx = get_index()
-    ctx = {"country": "BE", "client": "vandamme"}
-    proc = build_receipt(idx.by_id("be-holiday-pay-procedure"), ctx)
-    faq = build_receipt(idx.by_id("payroll-faq-old-sharepoint"), ctx)
-    nl = build_receipt(idx.by_id("nl-holiday-allowance-guide"), ctx)
+    from datetime import date, timedelta
+    recent = (date.today() - timedelta(days=21)).isoformat()
+    ctx = {"country": "BE", "client": None}
+    proc = build_receipt({"id": "proc", "title": "Procedure", "owner": "An Peeters",
+        "owner_team": "Payroll BE", "last_verified": recent, "last_updated": recent,
+        "scope": {"countries": ["BE"], "clients": ["all"], "products": ["payroll"]}}, ctx)
+    faq = build_receipt({"id": "faq", "title": "Old FAQ", "owner": None,
+        "last_updated": "2022-03-14", "last_verified": None, "scope": {}}, ctx)
+    nl = build_receipt({"id": "nl", "title": "NL Guide", "owner": "S", "last_verified": recent,
+        "scope": {"countries": ["NL"], "clients": ["all"]}}, ctx)
     assert proc["verdict"]["label"] == "Reliable", proc["verdict"]
     assert faq["owner"]["label"] == "No owner"
     assert faq["verdict"]["label"] == "Use with care", faq["verdict"]
     assert nl["verdict"]["label"] == "Doesn't apply here", nl["verdict"]
-    # closing-loop: after owner supersedes the FAQ it reads as superseded
-    st = {"overrides": {"payroll-faq-old-sharepoint": {"superseded": True}}}
-    faq2 = build_receipt(idx.by_id("payroll-faq-old-sharepoint"), ctx, st)
+    faq2 = build_receipt({"id": "faq", "title": "Old FAQ", "owner": None, "scope": {}}, ctx,
+                         {"overrides": {"faq": {"superseded": True}}})
     assert faq2["verdict"]["label"] == "Superseded", faq2["verdict"]
     print("signals ok:", proc["verdict"], "|", faq["verdict"], "|", nl["verdict"])

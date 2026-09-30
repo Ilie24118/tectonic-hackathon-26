@@ -1,26 +1,22 @@
 """Trust Receipt — Flask app. Run: python app.py  (mock mode needs no API key)."""
+import glob
 import os
 
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, url_for
+from werkzeug.utils import secure_filename
 
 from trust import conflicts as conflicts_mod
 from trust import llm, state
 from trust.context import apply_lens, detect_context
-from trust.retrieval import get_index
+from trust.retrieval import get_index, ingest_pdf
 from trust.signals import build_receipt
 
 load_dotenv()
 app = Flask(__name__)
+DOCS_DIR = os.path.join(os.path.dirname(__file__), "data", "docs")
 
-DEMO_Q = ("How is double holiday pay calculated for a part-time employee who leaves mid-year? "
-          "Client: Brouwerij Vandamme (BE).")
-
-# The 2026 change from Teams that the owner can fold into the procedure (drives "Update my doc").
-TEAMS_NOTE = ("From 2026, when a part-time employee has had multiple occupation fractions during "
-              "the qualifying year, use the time-weighted average fraction (not the fraction at the "
-              "leaving date) to calculate departure double holiday pay. Flagged by Jonas Maes in "
-              "#payroll-be.")
+DEMO_Q = ""  # clean corpus: no pre-filled sample question
 
 
 def assemble(question, country, client):
@@ -47,7 +43,7 @@ def assemble(question, country, client):
         cards.append(card)
 
     # Conflicts across everything shown; attach to the two cards involved.
-    cons = conflicts_mod.find_conflicts([it["id"] for it in ordered], st)
+    cons = conflicts_mod.detect_for(ordered, st)
     for c in cons:
         a, b = num_by_id.get(c["doc_a"]), num_by_id.get(c["doc_b"])
         for card in cards:
@@ -72,7 +68,6 @@ def assemble(question, country, client):
         "cards": cards, "conflicts": cons,
         "gaps": ans["gaps"], "out_of_scope_notes": ans["out_of_scope_notes"],
         "experts": who_knows(ans, in_scope, ctx),
-        "teams_note": TEAMS_NOTE,
         "mock": llm.is_mock(),
     }
 
@@ -101,7 +96,24 @@ def who_knows(ans, in_scope, ctx):
 
 @app.route("/")
 def home():
-    return render_template("ask.html", demo_q=DEMO_Q, mock=llm.is_mock())
+    docs = [it for it in get_index().items if it["kind"] == "doc"]
+    return render_template("ask.html", demo_q=DEMO_Q, mock=llm.is_mock(),
+                           doc_count=len(docs))
+
+
+@app.route("/import", methods=["GET", "POST"])
+def import_docs():
+    if request.method == "POST":
+        for f in request.files.getlist("pdf"):
+            if f and f.filename.lower().endswith(".pdf"):
+                name = secure_filename(f.filename)
+                path = os.path.join(DOCS_DIR, name)
+                f.save(path)
+                ingest_pdf(path, force=True)  # extract + cache metadata now
+        return redirect(url_for("import_docs"))
+    st = state.load()
+    cards = [build_receipt(d, {}, st) for d in get_index().items if d["kind"] == "doc"]
+    return render_template("import.html", cards=cards, mock=llm.is_mock())
 
 
 @app.route("/ask")
@@ -121,7 +133,6 @@ def flag():
         "owner": f["owner"], "topic": f.get("topic", ""),
         "snippet_a": f.get("snippet_a", ""), "snippet_b": f.get("snippet_b", ""),
         "doc_version": int(f.get("doc_version") or 1),
-        "teams_note": f.get("teams_note", ""),
         "question": f.get("question", ""), "country": f.get("country", ""),
         "client": f.get("client", ""),
     })
@@ -159,13 +170,21 @@ def radar():
     orphan_ids = {c["id"] for c in orphans}
     stale = [c for c in cards
              if c["verification"]["level"] == "red" and c["id"] not in orphan_ids]
-    return render_template("radar.html", conflicts=conflicts_mod.all_conflicts(st),
+    return render_template("radar.html", conflicts=conflicts_mod.all_found(st),
                            orphans=orphans, stale=stale, idx=idx)
+
+
+@app.route("/reindex")
+def reindex():
+    for p in glob.glob(os.path.join(DOCS_DIR, "*.pdf")):
+        ingest_pdf(p, force=True)
+    return redirect(url_for("import_docs"))
 
 
 @app.route("/reset")
 def reset():
     state.reset()
+    conflicts_mod.reset()
     return redirect(url_for("home"))
 
 

@@ -4,3 +4,8 @@ __pycache__/
 .DS_Store
 venv/
 .venv/
+
+# User-imported corpus + runtime caches (regenerated on import)
+data/docs/*.pdf
+data/docs/*.meta.json
+data/conflicts_found.json

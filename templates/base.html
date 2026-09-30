@@ -17,6 +17,7 @@
     </a>
     <nav>
       <a href="{{ url_for('home') }}">Ask</a>
+      <a href="{{ url_for('import_docs') }}">Import PDFs</a>
       <a href="{{ url_for('radar') }}">Conflict Radar</a>
       <a href="{{ url_for('reset') }}" class="reset">Reset demo</a>
       {% if mock %}<span class="mode-badge" title="No API key — canned answers">MOCK MODE</span>{% endif %}

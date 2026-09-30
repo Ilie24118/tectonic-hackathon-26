@@ -39,8 +39,8 @@
     <form action="{{ url_for('resolve', name=name) }}" method="post" class="update-form">
       <input type="hidden" name="req_id" value="{{ r.id }}">
       <input type="hidden" name="action" value="update">
-      <label>✍️ Update my doc (append this change):</label>
-      <textarea name="append_text" rows="3">{{ r.teams_note }}</textarea>
+      <label>✍️ Update my doc (append the correction):</label>
+      <textarea name="append_text" rows="3" placeholder="Describe the correction to append to your document…"></textarea>
       <button class="btn-update" type="submit">Save update &amp; re-verify</button>
     </form>
     {% else %}

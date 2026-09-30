@@ -53,9 +53,9 @@ def apply_lens(items, ctx):
 
 
 if __name__ == "__main__":
-    ctx = detect_context("How is double holiday pay calculated for a part-time employee "
-                         "who leaves mid-year? Client: Brouwerij Vandamme (BE).")
-    assert ctx == {"country": "BE", "client": "vandamme"}, ctx
-    ctx2 = detect_context("How does holiday allowance work for a leaver in the Netherlands?")
-    assert ctx2["country"] == "NL", ctx2
-    print("context ok:", ctx, ctx2)
+    assert detect_context("What is the rule in Belgium (BE)?")["country"] == "BE"
+    assert detect_context("How does it work in the Netherlands?")["country"] == "NL"
+    items = [{"id": "d", "kind": "doc", "scope": {"countries": ["NL"], "clients": ["all"]}}]
+    ins, oos = apply_lens(items, {"country": "BE", "client": None})
+    assert oos and not ins, "NL doc should be out of scope for BE"
+    print("context ok")

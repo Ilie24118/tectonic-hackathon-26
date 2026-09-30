@@ -39,6 +39,15 @@ button{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:11
 button:hover{background:var(--accent-d)}
 .context-row button{margin-left:auto}
 .examples{color:var(--muted);font-size:13.5px;max-width:720px;margin:10px auto}
+.warn-box{background:var(--amber-bg);border:1px solid #eccf8f;color:#7a4807;border-radius:10px;
+  padding:12px 16px;max-width:720px;margin:16px auto;font-size:14.5px}
+.hint{color:var(--muted);font-size:13.5px;max-width:760px;margin:10px 0}
+.hint code,.warn-box code{background:#eef1f6;padding:1px 5px;border-radius:5px;font-size:12.5px}
+.import-page .askbox{display:flex;gap:12px;align-items:center;max-width:760px;margin:16px 0}
+.import-page h2{margin:26px 0 12px;font-size:19px}
+input[type=file],input[type=text]{border:1px solid var(--line);border-radius:8px;padding:9px;
+  font-size:15px;font-family:inherit}
+.import-page input[type=file]{flex:1}
 
 /* answer page */
 .askbox.slim{max-width:100%;margin:0 0 14px;display:flex;gap:10px;align-items:start;padding:12px}

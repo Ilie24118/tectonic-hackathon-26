@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Import PDFs — Trust Receipt{% endblock %}
+{% block content %}
+<section class="import-page">
+  <h1>📄 Import documents</h1>
+  <p class="sub">Drop in PDFs. We read the text and let the model draft the metadata
+    (title, scope, type). Owner and verified-date usually aren’t written in a document, so those
+    stay blank — and that shows up honestly as a red trust signal until someone fills them in.</p>
+
+  {% if mock %}
+  <p class="warn-box">⚠️ Running in <strong>mock mode</strong> (no API key): metadata falls back to
+    the filename and scope stays empty. Set <code>ANTHROPIC_API_KEY</code> and
+    <code>MOCK_MODE=0</code> for real extraction, then hit <a href="{{ url_for('reindex') }}">re-index</a>.</p>
+  {% endif %}
+
+  <form action="{{ url_for('import_docs') }}" method="post" enctype="multipart/form-data" class="askbox">
+    <input type="file" name="pdf" accept="application/pdf" multiple required>
+    <button type="submit">Import →</button>
+  </form>
+
+  <p class="hint">Extracted metadata is cached next to each PDF as
+    <code>&lt;name&gt;.meta.json</code> — edit that file to correct the owner, verified date or
+    scope, then <a href="{{ url_for('reindex') }}">re-index</a>. You can also just copy PDFs into
+    <code>data/docs/</code> directly.</p>
+
+  <h2>In the knowledge base ({{ cards|length }})</h2>
+  {% if not cards %}<p class="empty">Nothing imported yet.</p>{% endif %}
+  <div class="sources">
+    {% for c in cards %}
+    <div class="source-card verdict-{{ c.verdict.level }}">
+      <div class="source-head">
+        <span class="source-title">{{ c.title }}{% if c.version %} <em>v{{ c.version }}</em>{% endif %}</span>
+        <span class="type-tag type-{{ c.source_type }}">{{ c.source_type }}</span>
+      </div>
+      <ul class="signals">
+        <li class="sig sig-{{ c.verification.level }}"><span class="sig-icon">{{ c.verification.icon }}</span>
+          <span><strong>{{ c.verification.label }}</strong><br><small>{{ c.verification.detail }}</small></span></li>
+        <li class="sig sig-{{ c.owner.level }}"><span class="sig-icon">{{ c.owner.icon }}</span>
+          <span><strong>{{ c.owner.label }}</strong>{% if c.owner.detail %}<br><small>{{ c.owner.detail }}</small>{% endif %}</span></li>
+        <li class="sig sig-{{ c.scope.level }}"><span class="sig-icon">{{ c.scope.icon }}</span>
+          <span><strong>{{ c.scope.label }}</strong><br><small>{{ c.scope.detail }}</small></span></li>
+      </ul>
+      <div class="verdict verdict-pill-{{ c.verdict.level }}"><strong>{{ c.verdict.label }}</strong> — {{ c.verdict.reason }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

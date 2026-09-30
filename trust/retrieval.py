@@ -1,36 +1,63 @@
-"""Load docs + Teams messages and run BM25 retrieval over them."""
+"""Load imported PDFs + Teams messages and run BM25 retrieval over them.
+
+Docs are PDFs the user drops in data/docs/. On load we extract the text (pypdf) and, once
+per PDF, extract metadata with the LLM into a cached sidecar `<name>.meta.json`. Edit that
+sidecar by hand to fix anything the LLM could not know (owner, verified date, scope).
+"""
 import glob
 import json
 import os
 import re
 
-import yaml
+from pypdf import PdfReader
 from rank_bm25 import BM25Okapi
 
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
+DOCS = os.path.join(DATA, "docs")
 
-_FRONTMATTER = re.compile(r"^---\n(.*?)\n---\n(.*)$", re.DOTALL)
+
+def _empty_scope():
+    return {"countries": [], "clients": [], "products": []}
+
+
+def pdf_text(path):
+    try:
+        return "\n".join((p.extract_text() or "") for p in PdfReader(path).pages).strip()
+    except Exception as e:  # unreadable/encrypted PDF — don't crash the whole corpus
+        return f"(could not read PDF: {e})"
+
+
+def _sidecar(pdf_path):
+    return os.path.splitext(pdf_path)[0] + ".meta.json"
+
+
+def ingest_pdf(pdf_path, force=False):
+    """Return metadata dict for a PDF, extracting + caching a sidecar if needed."""
+    from trust import llm
+    side = _sidecar(pdf_path)
+    text = pdf_text(pdf_path)
+    fresh = os.path.exists(side) and os.path.getmtime(side) >= os.path.getmtime(pdf_path)
+    if fresh and not force:
+        meta = json.load(open(side, encoding="utf-8"))
+    else:
+        meta = llm.extract_metadata(text, os.path.basename(pdf_path))
+        json.dump(meta, open(side, "w", encoding="utf-8"), indent=2)
+    scope = meta.get("scope") or {}
+    meta["scope"] = {"countries": scope.get("countries") or [],
+                     "clients": scope.get("clients") or [],
+                     "products": scope.get("products") or []}
+    meta["id"] = os.path.splitext(os.path.basename(pdf_path))[0]
+    meta["kind"] = "doc"
+    meta["body"] = text
+    meta.setdefault("title", meta["id"])
+    meta.setdefault("source_type", "document")
+    for k in ("owner", "owner_team", "last_updated", "last_verified", "version"):
+        meta.setdefault(k, None)
+    return meta
 
 
 def _load_docs():
-    docs = []
-    for path in sorted(glob.glob(os.path.join(DATA, "docs", "*.md"))):
-        raw = open(path, encoding="utf-8").read()
-        m = _FRONTMATTER.match(raw)
-        if not m:
-            continue
-        meta = yaml.safe_load(m.group(1)) or {}
-        body = m.group(2).strip()
-        meta["body"] = body
-        meta["kind"] = "doc"
-        scope = meta.get("scope") or {}
-        meta["scope"] = {
-            "countries": scope.get("countries") or [],
-            "clients": scope.get("clients") or [],
-            "products": scope.get("products") or [],
-        }
-        docs.append(meta)
-    return docs
+    return [ingest_pdf(p) for p in sorted(glob.glob(os.path.join(DOCS, "*.pdf")))]
 
 
 def _load_teams():
@@ -38,20 +65,12 @@ def _load_teams():
     for path in sorted(glob.glob(os.path.join(DATA, "teams", "*.json"))):
         for m in json.load(open(path, encoding="utf-8")):
             msgs.append({
-                "id": m["id"],
-                "title": f"Teams {m['channel']} — {m['author']}",
-                "kind": "teams",
-                "source_type": "teams",
-                "channel": m["channel"],
-                "author": m["author"],
-                "owner": None,
-                "owner_team": None,
-                "last_updated": m["timestamp"][:10],
-                "last_verified": None,
-                "version": None,
-                "scope": {"countries": [], "clients": [], "products": []},
-                "body": m["text"],
-                "reactions": m.get("reactions", []),
+                "id": m["id"], "title": f"Teams {m['channel']} — {m['author']}",
+                "kind": "teams", "source_type": "teams",
+                "channel": m["channel"], "author": m["author"],
+                "owner": None, "owner_team": None,
+                "last_updated": m["timestamp"][:10], "last_verified": None, "version": None,
+                "scope": _empty_scope(), "body": m["text"], "reactions": m.get("reactions", []),
             })
     return msgs
 
@@ -63,43 +82,32 @@ def _tokenize(text):
 class Index:
     def __init__(self):
         self.items = _load_docs() + _load_teams()
-        corpus = [
-            _tokenize((it.get("title", "") + " ") * 2 + it.get("body", ""))
-            for it in self.items
-        ]
+        corpus = [_tokenize((it.get("title", "") + " ") * 2 + it.get("body", ""))
+                  for it in self.items] or [[""]]
         self.bm25 = BM25Okapi(corpus)
 
     def by_id(self, doc_id):
         return next((it for it in self.items if it["id"] == doc_id), None)
 
     def search(self, query, n_docs=4, n_teams=2):
-        # Split doc vs teams quotas so short Teams chatter can't crowd out the real docs,
-        # and skip archived duplicates (they exist for history/radar, not for answering).
+        if not self.items:
+            return []
         scores = self.bm25.get_scores(_tokenize(query))
         ranked = [it for score, it in
-                  sorted(zip(scores, self.items), key=lambda x: x[0], reverse=True)
-                  if score > 0]
-        docs = [it for it in ranked if it["kind"] == "doc"
-                and not it["id"].endswith("-archive")][:n_docs]
+                  sorted(zip(scores, self.items), key=lambda x: x[0], reverse=True) if score > 0]
+        docs = [it for it in ranked if it["kind"] == "doc"][:n_docs]
         teams = [it for it in ranked if it["kind"] == "teams"][:n_teams]
-        # Preserve overall relevance order for display.
         keep = {it["id"] for it in docs + teams}
         return [it for it in ranked if it["id"] in keep]
 
 
-# Rebuilt on each request so owner edits (appended text) are re-indexed. Corpus is tiny.
 def get_index():
     return Index()
 
 
 if __name__ == "__main__":
     idx = get_index()
-    q = "How is double holiday pay calculated for a part-time employee who leaves mid-year? " \
-        "Client: Brouwerij Vandamme (BE)."
-    hits = idx.search(q)
-    got = {h["id"] for h in hits}
-    for needed in ["be-holiday-pay-procedure", "payroll-faq-old-sharepoint",
-                   "nl-holiday-allowance-guide", "tm-be-001"]:
-        assert needed in got, f"planted source {needed} missing from {got}"
-    assert "be-holiday-pay-v3-archive" not in got, "archived duplicate should be excluded"
-    print("retrieval ok:", [h["id"] for h in hits])
+    print(f"loaded {len([i for i in idx.items if i['kind']=='doc'])} PDF docs,",
+          f"{len([i for i in idx.items if i['kind']=='teams'])} teams messages")
+    if idx.items:
+        print("sample:", idx.items[0]["id"], "-", idx.items[0].get("title"))

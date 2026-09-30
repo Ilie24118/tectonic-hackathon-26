@@ -2,34 +2,31 @@
 {% block content %}
 <section class="hero">
   <h1>Answers that show their work.</h1>
-  <p class="sub">Every claim links to its source. Every source shows plain trust signals:
-     is it fresh, who owns it, does it apply here, does it conflict with anything.</p>
+  <p class="sub">Ask over your own documents. Every claim links to its source, and every source
+     shows plain trust signals: is it fresh, who owns it, does it apply here, does it conflict
+     with anything.</p>
 
+  {% if doc_count == 0 %}
+  <p class="warn-box">No documents yet. <a href="{{ url_for('import_docs') }}">Import some PDFs →</a></p>
+  {% else %}
   <form action="{{ url_for('ask') }}" method="get" class="askbox">
-    <textarea name="q" rows="3" placeholder="Ask a payroll or HR question…">{{ demo_q }}</textarea>
+    <textarea name="q" rows="3" placeholder="Ask a question about your documents…">{{ demo_q }}</textarea>
     <div class="context-row">
       <label>Country
         <select name="country">
           <option value="">auto-detect</option>
-          <option value="BE">BE</option>
-          <option value="NL">NL</option>
+          <option value="BE">BE</option><option value="NL">NL</option>
+          <option value="FR">FR</option><option value="DE">DE</option><option value="LU">LU</option>
         </select>
       </label>
       <label>Client
-        <select name="client">
-          <option value="">auto-detect</option>
-          <option value="vandamme">Brouwerij Vandamme (BE)</option>
-          <option value="dekkers">Dekkers Logistiek (NL)</option>
-          <option value="lumen">Lumen Software (BE)</option>
-        </select>
+        <input type="text" name="client" placeholder="optional">
       </label>
       <button type="submit">Ask →</button>
     </div>
   </form>
-
-  <p class="examples">Try: the pre-filled demo question, or
-    “What is the deadline to report sick leave in Belgium?”,
-    “Does an employee with 4 months of service get the end-of-year premium?”,
-    “How does holiday allowance work for a leaver in the Netherlands?”</p>
+  <p class="examples">{{ doc_count }} document{{ 's' if doc_count != 1 }} in the knowledge base ·
+     <a href="{{ url_for('import_docs') }}">import more</a></p>
+  {% endif %}
 </section>
 {% endblock %}

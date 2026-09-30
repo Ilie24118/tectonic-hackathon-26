@@ -1,43 +1,62 @@
-"""Conflict detection across cited sources.
+"""Conflict detection across sources, LLM-driven with a persistent cache.
 
-Mock mode reads known conflicts from data/conflicts.json. Live mode can ask the LLM to
-compare pairs, but the demo relies on the deterministic list so it never flakes.
+Conflicts are found among the sources cited by a question (one LLM call, cached by the set of
+ids so re-runs are instant and deterministic). Everything found so far is remembered so the
+Radar can show it — "every question asked makes the knowledge base more trustworthy."
+
+Mock mode (no API key) detects nothing.
 """
 import json
 import os
 
-DATA = os.path.join(os.path.dirname(__file__), "..", "data")
+from trust import llm
+
+CACHE = os.path.join(os.path.dirname(__file__), "..", "data", "conflicts_found.json")
 
 
-def _known():
-    return json.load(open(os.path.join(DATA, "conflicts.json"), encoding="utf-8"))
+def _load():
+    try:
+        return json.load(open(CACHE, encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"by_key": {}}
 
 
-def find_conflicts(cited_ids, state=None):
-    """Return conflicts among the cited source ids, dropping any resolved by an owner."""
-    overrides = (state or {}).get("overrides", {})
-    ids = set(cited_ids)
-    out = []
-    for c in _known():
-        if c["doc_a"] in ids and c["doc_b"] in ids:
-            resolved = overrides.get(c["doc_a"], {}).get("superseded") \
-                or overrides.get(c["doc_b"], {}).get("superseded")
-            out.append({**c, "resolved": bool(resolved)})
+def _save(cache):
+    json.dump(cache, open(CACHE, "w", encoding="utf-8"), indent=2)
+
+
+def _resolved(c, state):
+    ov = (state or {}).get("overrides", {})
+    return bool(ov.get(c["doc_a"], {}).get("superseded") or ov.get(c["doc_b"], {}).get("superseded"))
+
+
+def detect_for(sources, state=None):
+    """sources: retrieved items (with id/title/body). Returns conflicts among them, cached."""
+    key = ",".join(sorted(s["id"] for s in sources))
+    cache = _load()
+    if key not in cache["by_key"]:
+        cache["by_key"][key] = llm.detect_conflicts(sources)
+        _save(cache)
+    return [{**c, "resolved": _resolved(c, state)} for c in cache["by_key"][key]]
+
+
+def all_found(state=None):
+    """Every conflict found so far (deduped), for the Radar."""
+    seen, out = set(), []
+    for conflicts in _load()["by_key"].values():
+        for c in conflicts:
+            k = (frozenset((c["doc_a"], c["doc_b"])), c.get("topic", ""))
+            if k not in seen:
+                seen.add(k)
+                out.append({**c, "resolved": _resolved(c, state)})
     return out
 
 
-def all_conflicts(state=None):
-    """Every known conflict (for the Radar), with resolved flags."""
-    return find_conflicts(
-        {c["doc_a"] for c in _known()} | {c["doc_b"] for c in _known()}, state
-    )
+def reset():
+    _save({"by_key": {}})
 
 
 if __name__ == "__main__":
-    cs = find_conflicts(["be-holiday-pay-procedure", "payroll-faq-old-sharepoint",
-                         "nl-holiday-allowance-guide"])
-    assert len(cs) == 1 and cs[0]["topic"].startswith("reference period"), cs
-    assert cs[0]["resolved"] is False
-    st = {"overrides": {"payroll-faq-old-sharepoint": {"superseded": True}}}
-    assert find_conflicts(["be-holiday-pay-procedure", "payroll-faq-old-sharepoint"], st)[0]["resolved"]
-    print("conflicts ok:", cs[0]["topic"])
+    os.environ["MOCK_MODE"] = "1"
+    assert detect_for([{"id": "a", "body": "x"}, {"id": "b", "body": "y"}]) == []
+    print("conflicts ok (mock: none)")
