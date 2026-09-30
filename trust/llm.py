@@ -56,10 +56,16 @@ _META_SYSTEM = (
     "You extract metadata from a payroll/HR document. Return STRICT JSON with keys: "
     "title, source_type (one of procedure|policy|faq|checklist|manual|analysis|document), "
     "scope {countries: [ISO2 codes], clients: [names], products: [payroll|hr|reward|finance]}, "
-    "owner (person's name or null), owner_team (or null), "
-    "last_updated (YYYY-MM-DD or null), last_verified (YYYY-MM-DD or null), version (int or null). "
-    "CRITICAL: only fill owner/last_updated/last_verified/version if the value is EXPLICITLY stated "
-    "in the text. If it is not in the document, use null — never guess. No prose outside the JSON."
+    "owner (accountable PERSON's name, or null if only a team is named), "
+    "owner_team (accountable team/department/'Owner' field, or null), "
+    "last_updated (YYYY-MM-DD or null), last_verified (YYYY-MM-DD or null), version (or null). "
+    "Map date labels: 'Effective from', 'Effective date', 'Last updated', 'Updated', 'Revised', "
+    "'Revision date', 'Version date', 'Date' -> last_updated. 'Last verified', 'Verified', "
+    "'Reviewed on', 'Reviewed & approved', 'Approved on' -> last_verified (a PAST confirmation "
+    "date only — never a 'next review'/future date). Convert any date format "
+    "(e.g. '1 January 2026') to YYYY-MM-DD. "
+    "CRITICAL: only fill a field if the value is present in the text — never invent one. Use null "
+    "when absent. No prose outside the JSON."
 )
 
 
@@ -81,6 +87,9 @@ def extract_metadata(text, filename):
     base = _fallback_meta(filename)
     base.update({k: data.get(k, base[k]) for k in base})
     base["scope"] = data.get("scope") or base["scope"]
+    v = base.get("version")
+    if isinstance(v, str):  # normalize "v4.2" / "V4" -> "4.2" (template adds the 'v')
+        base["version"] = v.strip().lstrip("vV").strip() or None
     return base
 
 

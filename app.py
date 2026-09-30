@@ -135,7 +135,7 @@ def flag():
         "doc_id": f["doc_id"], "conflict_with": f.get("conflict_with") or None,
         "owner": f["owner"], "topic": f.get("topic", ""),
         "snippet_a": f.get("snippet_a", ""), "snippet_b": f.get("snippet_b", ""),
-        "doc_version": int(f.get("doc_version") or 1),
+        "doc_version": f.get("doc_version") or "1",
         "question": f.get("question", ""), "country": f.get("country", ""),
         "client": f.get("client", ""),
     })

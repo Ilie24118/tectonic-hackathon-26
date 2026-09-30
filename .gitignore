@@ -9,3 +9,4 @@ venv/
 data/docs/*.pdf
 data/docs/*.meta.json
 data/conflicts_found.json
+.env

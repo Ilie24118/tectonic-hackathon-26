@@ -72,7 +72,10 @@ def resolve_update(req_id, appended_text):
     ov = state["overrides"].setdefault(req["doc_id"], {})
     ov["appended_text"] = (ov.get("appended_text", "") + "\n\n" + appended_text).strip()
     ov["last_verified"] = date.today().isoformat()
-    ov["version"] = (req.get("doc_version") or 1) + 1
+    try:
+        ov["version"] = int(float(req.get("doc_version") or 1)) + 1
+    except (TypeError, ValueError):
+        ov["version"] = None
     if req.get("conflict_with"):
         state["overrides"].setdefault(req["conflict_with"], {})["superseded"] = True
     req["status"] = "updated"

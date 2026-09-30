@@ -2,7 +2,7 @@
 {% block title %}Owner inbox — {{ name }}{% endblock %}
 {% block content %}
 <section class="owner-page">
-  <h1>📥 Owner inbox — {{ name }}</h1>
+  <h1>Owner inbox — {{ name }}</h1>
   <p class="sub">Requests where your knowledge closes a gap. Confirming makes the receipt turn green
      for everyone who asks next.</p>
 
@@ -27,26 +27,26 @@
       <form action="{{ url_for('resolve', name=name) }}" method="post">
         <input type="hidden" name="req_id" value="{{ r.id }}">
         <input type="hidden" name="action" value="confirm">
-        <button class="btn-confirm" type="submit">✅ Confirm my doc is correct</button>
+        <button class="btn-confirm" type="submit">Confirm my doc is correct</button>
       </form>
       <form action="{{ url_for('resolve', name=name) }}" method="post">
         <input type="hidden" name="req_id" value="{{ r.id }}">
         <input type="hidden" name="action" value="dismiss">
-        <button class="btn-dismiss" type="submit">🙅 Not my area</button>
+        <button class="btn-dismiss" type="submit">Not my area</button>
       </form>
     </div>
 
     <form action="{{ url_for('resolve', name=name) }}" method="post" class="update-form">
       <input type="hidden" name="req_id" value="{{ r.id }}">
       <input type="hidden" name="action" value="update">
-      <label>✍️ Update my doc (append the correction):</label>
+      <label>Update my doc (append the correction):</label>
       <textarea name="append_text" rows="3" placeholder="Describe the correction to append to your document…"></textarea>
       <button class="btn-update" type="submit">Save update &amp; re-verify</button>
     </form>
     {% else %}
-    <p class="resolution">✔ {{ r.resolution }}
+    <p class="resolution">{{ r.resolution }}
       {% if r.question %}<a href="{{ url_for('ask', q=r.question, country=r.country, client=r.client) }}">
-        See the updated receipt →</a>{% endif %}</p>
+        See the updated receipt</a>{% endif %}</p>
     {% endif %}
   </div>
   {% endfor %}

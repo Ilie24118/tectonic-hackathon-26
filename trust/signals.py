@@ -54,31 +54,39 @@ def _effective(item, state):
 
 def verification_signal(item):
     if item.get("kind") == "teams":
-        return {"level": "amber", "icon": "💬", "label": "Expert remark, unverified",
+        return {"level": "amber", "label": "Expert remark, unverified",
                 "detail": f"Posted by {item.get('author', 'unknown')} {_human_age(_parse(item['last_updated']))}"}
     lv = _parse(item.get("last_verified"))
     if lv is None:
+        # Not confirmed by an owner. If the document carries its own date, that's amber-worthy
+        # (fresh content, just not verified) rather than the harsh "never verified" red.
         lu = _parse(item.get("last_updated"))
-        upd = f"Updated {_human_age(lu)}" if lu else "Unknown date"
-        return {"level": "red", "icon": "❌", "label": "Never verified",
-                "detail": f"{upd}, never confirmed by an owner"}
+        if lu:
+            level = "amber" if _months_ago(lu) <= FRESHNESS["amber_max_months"] else "red"
+            return {"level": level, "label": "Not verified by owner",
+                    "detail": f"Document dated {lu.isoformat()} ({_human_age(lu)}); "
+                              f"no owner has confirmed it's still correct"}
+        return {"level": "red", "label": "Never verified",
+                "detail": "Unknown date, never confirmed by an owner"}
     m = _months_ago(lv)
     if m <= FRESHNESS["green_max_months"]:
-        level, icon = "green", "✅"
+        level = "green"
     elif m <= FRESHNESS["amber_max_months"]:
-        level, icon = "amber", "⚠️"
+        level = "amber"
     else:
-        level, icon = "red", "❌"
-    return {"level": level, "icon": icon, "label": f"Verified by owner {_human_age(lv)}",
+        level = "red"
+    return {"level": level, "label": f"Verified by owner {_human_age(lv)}",
             "detail": f"Owner last confirmed content on {lv.isoformat()}"}
 
 
 def owner_signal(item):
-    owner = item.get("owner")
-    if owner:
-        return {"level": "green", "icon": "👤", "label": owner,
-                "detail": item.get("owner_team") or ""}
-    return {"level": "red", "icon": "👤", "label": "No owner",
+    # A team is accountable too — team-level ownership still counts.
+    person, team = item.get("owner"), item.get("owner_team")
+    if person:
+        return {"level": "green", "label": person, "detail": team or ""}
+    if team:
+        return {"level": "green", "label": team, "detail": "Owned at team level"}
+    return {"level": "red", "label": "No owner",
             "detail": "Nobody is accountable for this document"}
 
 
@@ -94,7 +102,7 @@ def scope_signal(item, ctx):
     scope = item.get("scope") or {}
     countries = scope.get("countries") or []
     if item.get("kind") == "teams":
-        return {"level": "amber", "icon": "🌍", "label": "Scope not declared",
+        return {"level": "amber", "label": "Scope not declared",
                 "detail": "Teams message — applies where the author intended", "matches": True}
     parts = []
     parts.append("/".join(countries) if countries else "country unclear")
@@ -106,11 +114,11 @@ def scope_signal(item, ctx):
     label = ", ".join(parts)
     matches = scope_matches(scope, ctx)
     if not matches:
-        return {"level": "red", "icon": "🌍", "label": label,
+        return {"level": "red", "label": label,
                 "detail": f"Does not match current context ({ctx.get('country') or '—'}"
                           f"{'/' + ctx['client'] if ctx.get('client') else ''})", "matches": False}
     level = "green" if countries else "amber"
-    return {"level": level, "icon": "🌍", "label": label,
+    return {"level": level, "label": label,
             "detail": "Matches current context" if countries else "Scope is unclear — matches by default",
             "matches": True}
 
@@ -128,11 +136,13 @@ def verdict(item, verification, owner, scope):
     if verification["level"] == "green" and owner["level"] == "green":
         return {"label": "Reliable", "level": "green",
                 "reason": "Owned and recently verified, in scope"}
-    if owner["level"] == "red" or verification["level"] == "red":
-        return {"label": "Use with care", "level": "red" if verification["level"] == "red" else "amber",
-                "reason": "No accountable owner" if owner["level"] == "red" else "Not verified recently"}
+    if owner["level"] == "red":
+        return {"label": "Use with care", "level": "red", "reason": "No accountable owner"}
+    if verification["level"] == "red":
+        return {"label": "Use with care", "level": "red", "reason": "Not verified recently"}
+    # owned + in scope, but not owner-verified
     return {"label": "Use with care", "level": "amber",
-            "reason": "Getting stale — verify before relying on it"}
+            "reason": "Owned, but no owner has verified it — confirm before relying on it"}
 
 
 def build_receipt(item, ctx, state=None):

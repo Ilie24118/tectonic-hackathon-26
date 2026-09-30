@@ -7,7 +7,7 @@
      with anything.</p>
 
   {% if doc_count == 0 %}
-  <p class="warn-box">No documents yet. <a href="{{ url_for('import_docs') }}">Import some PDFs →</a></p>
+  <p class="warn-box">No documents yet. <a href="{{ url_for('import_docs') }}">Import some PDFs</a></p>
   {% else %}
   <form action="{{ url_for('ask') }}" method="get" class="askbox">
     <textarea name="q" rows="3" placeholder="Ask a question about your documents…">{{ demo_q }}</textarea>
@@ -22,7 +22,7 @@
       <label>Client
         <input type="text" name="client" placeholder="optional">
       </label>
-      <button type="submit">Ask →</button>
+      <button type="submit">Ask</button>
     </div>
   </form>
   <p class="examples">{{ doc_count }} document{{ 's' if doc_count != 1 }} in the knowledge base ·

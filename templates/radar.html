@@ -2,10 +2,10 @@
 {% block title %}Conflict Radar{% endblock %}
 {% block content %}
 <section class="radar-page">
-  <h1>📡 Conflict Radar</h1>
+  <h1>Conflict Radar</h1>
   <p class="sub">Every question asked makes the knowledge base more trustworthy. Here’s what needs attention.</p>
 
-  <h2>⚡ Conflicts ({{ conflicts|length }})</h2>
+  <h2>Conflicts ({{ conflicts|length }})</h2>
   <div class="radar-list">
     {% for c in conflicts %}
     <div class="radar-item {{ 'resolved' if c.resolved }}">
@@ -18,7 +18,7 @@
     {% endfor %}
   </div>
 
-  <h2>👤 Orphaned docs — nobody accountable ({{ orphans|length }})</h2>
+  <h2>Orphaned docs — nobody accountable ({{ orphans|length }})</h2>
   <div class="radar-list">
     {% for o in orphans %}
     <div class="radar-item">
@@ -28,7 +28,7 @@
     {% endfor %}
   </div>
 
-  <h2>❌ Stale / never-verified docs ({{ stale|length }})</h2>
+  <h2>Stale / never-verified docs ({{ stale|length }})</h2>
   <div class="radar-list">
     {% for s in stale %}
     <div class="radar-item">

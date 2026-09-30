@@ -7,13 +7,13 @@
     <textarea name="q" rows="2">{{ question }}</textarea>
     <input type="hidden" name="country" value="{{ ctx.country or '' }}">
     <input type="hidden" name="client" value="{{ ctx.client or '' }}">
-    <button type="submit">Re-run ↻</button>
+    <button type="submit">Re-run</button>
   </form>
 
   <div class="lens">
     <span class="lens-label">Context Lens</span>
-    <span class="chip-ctx">🌍 {{ ctx.country or 'any country' }}</span>
-    <span class="chip-ctx">🏢 {{ ctx.client or 'any client' }}</span>
+    <span class="chip-ctx">Country: {{ ctx.country or 'any' }}</span>
+    <span class="chip-ctx">Client: {{ ctx.client or 'any' }}</span>
     <span class="lens-note">Answer scoped to this context. Out-of-scope sources are shown but not used.</span>
   </div>
 
@@ -26,7 +26,7 @@
   <!-- PLAIN -->
   <div id="mode-plain" class="answer-card plain-answer" style="display:none">
     <p>{{ plain }}</p>
-    <p class="plain-warn">⚠️ No sources, no trust signals, no scope. You can’t tell what’s reliable.</p>
+    <p class="plain-warn">No sources, no trust signals, no scope. You can’t tell what’s reliable.</p>
   </div>
 
   <!-- RECEIPT -->
@@ -39,20 +39,20 @@
 
       {% if gaps %}
       <div class="gaps">
-        <h4>⚠︎ What I could not confirm</h4>
+        <h4>What I could not confirm</h4>
         <ul>{% for g in gaps %}<li>{{ g }}</li>{% endfor %}</ul>
       </div>
       {% endif %}
 
       {% if out_of_scope_notes %}
       <div class="oos-notes">
-        {% for n in out_of_scope_notes %}<p>🚫 {{ n }}</p>{% endfor %}
+        {% for n in out_of_scope_notes %}<p>{{ n }}</p>{% endfor %}
       </div>
       {% endif %}
 
       {% if experts %}
       <div class="experts">
-        <h4>👥 Who knows this</h4>
+        <h4>Who knows this</h4>
         {% for e in experts %}
           <p><strong>{{ e.name }}</strong> — {{ e.team }}. {{ e.why }}.
              <a href="mailto:{{ e.email }}">{{ e.email }}</a></p>
@@ -75,22 +75,22 @@
 
         <ul class="signals">
           <li class="sig sig-{{ c.verification.level }}">
-            <span class="sig-icon">{{ c.verification.icon }}</span>
-            <span><strong>{{ c.verification.label }}</strong><br><small>{{ c.verification.detail }}</small></span>
+            <small class="sig-kind">Verification</small>
+            <div><strong>{{ c.verification.label }}</strong><br><small>{{ c.verification.detail }}</small></div>
           </li>
           <li class="sig sig-{{ c.owner.level }}">
-            <span class="sig-icon">{{ c.owner.icon }}</span>
-            <span><strong>{{ c.owner.label }}</strong>{% if c.owner.detail %}<br><small>{{ c.owner.detail }}</small>{% endif %}</span>
+            <small class="sig-kind">Owner</small>
+            <div><strong>{{ c.owner.label }}</strong>{% if c.owner.detail %}<br><small>{{ c.owner.detail }}</small>{% endif %}</div>
           </li>
           <li class="sig sig-{{ c.scope.level }}">
-            <span class="sig-icon">{{ c.scope.icon }}</span>
-            <span><strong>{{ c.scope.label }}</strong><br><small>{{ c.scope.detail }}</small></span>
+            <small class="sig-kind">Scope</small>
+            <div><strong>{{ c.scope.label }}</strong><br><small>{{ c.scope.detail }}</small></div>
           </li>
         </ul>
 
         {% for cf in c.conflicts %}
         <div class="conflict {{ 'resolved' if cf.resolved }}">
-          <div class="conflict-head">⚡ {% if cf.resolved %}Resolved conflict{% else %}Conflicts with [{{ cf.with }}]{% endif %}
+          <div class="conflict-head">{% if cf.resolved %}Resolved conflict{% else %}Conflicts with [{{ cf.with }}]{% endif %}
             — <em>{{ cf.topic }}</em></div>
           <div class="conflict-snips">
             <div class="snip mine"><span class="snip-label">This source [{{ c.num }}]</span>{{ cf.mine }}</div>
@@ -109,7 +109,7 @@
             <input type="hidden" name="question" value="{{ question }}">
             <input type="hidden" name="country" value="{{ ctx.country or '' }}">
             <input type="hidden" name="client" value="{{ ctx.client or '' }}">
-            <button type="submit">{% if target == 'Reviewer' %}Flag for review →{% else %}Ask {{ target }} to resolve →{% endif %}</button>
+            <button type="submit">{% if target == 'Reviewer' %}Flag for review{% else %}Ask {{ target }} to resolve{% endif %}</button>
           </form>
           {% endif %}
         </div>
