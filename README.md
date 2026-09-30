@@ -1,5 +1,7 @@
 # Trust Receipt — answers that show their work
 
+**Team Alpha** · Tectonic Hackathon 2026
+
 A hackathon proof-of-concept for SD Worx: *How might we turn fragmented organisational knowledge
 into a trusted shared resource?*
 
@@ -23,11 +25,12 @@ signals plus a one-line plain verdict.
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env        # add ANTHROPIC_API_KEY for real extraction/answers
+cp .env.example .env        # add OPENROUTER_API_KEY for real extraction/answers
 python app.py               # → http://127.0.0.1:5000
 ```
 
-The app runs with **no API key** (mock mode) so it never crashes on stage — but importing PDFs is
+Get a free key at <https://openrouter.ai/keys>. The app runs with **no API key** (mock mode) so it
+never crashes on stage — but importing PDFs is
 only useful with a key, because metadata extraction, synthesised answers and conflict detection all
 use the LLM. See mock vs live below.
 
@@ -45,9 +48,9 @@ re-index. That edit *is* the first act of taking ownership.
 
 ## Mock vs live mode
 
-- **Live** (`ANTHROPIC_API_KEY` set, `MOCK_MODE=0`): LLM extracts metadata, writes answers with
+- **Live** (`OPENROUTER_API_KEY` set, `MOCK_MODE=0`): LLM extracts metadata, writes answers with
   citations (strict JSON, one retry), and detects conflicts across the sources a question cites.
-  Model from `LLM_MODEL` (default `claude-sonnet-5-5`).
+  Model from `LLM_MODEL` (default `nvidia/nemotron-3-super-120b-a12b:free`).
 - **Mock** (`MOCK_MODE=1` or no key): the app still runs — metadata = filename, answers quote the
   top source verbatim, conflicts return none. Good for a UI walkthrough, not for real content.
 
@@ -96,7 +99,7 @@ with the `DATA_DIR` env var.
 app.py              Flask routes (ask, import, flag, owner inbox, radar, reindex, reset) + view assembly
 trust/retrieval.py  load PDFs (pypdf) + cached metadata sidecars + Teams, BM25 index
 trust/context.py    Context Lens: detect country/client, scope sources to context
-trust/llm.py        Anthropic: extract_metadata, answer, detect_conflicts (+ mock fallbacks)
+trust/llm.py        OpenRouter: extract_metadata, answer, detect_conflicts (+ mock fallbacks)
 trust/signals.py    deterministic trust signals + plain verdicts (freshness thresholds live here)
 trust/conflicts.py  LLM conflict detection with a persistent cache (data/conflicts_found.json)
 trust/state.py      JSON state for flags + owner confirmations (data/state.json)
