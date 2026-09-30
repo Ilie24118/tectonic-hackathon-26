@@ -31,11 +31,18 @@ def _resolved(c, state):
 
 
 def detect_for(sources, state=None):
-    """sources: retrieved items (with id/title/body). Returns conflicts among them, cached."""
+    """sources: retrieved items (with id/title/body). Returns conflicts among them, cached.
+
+    A failed LLM call (None) is not cached, so a transient rate-limit/error doesn't get frozen
+    in as 'no conflicts' — re-running the question will try again.
+    """
     key = ",".join(sorted(s["id"] for s in sources))
     cache = _load()
     if key not in cache["by_key"]:
-        cache["by_key"][key] = llm.detect_conflicts(sources)
+        found = llm.detect_conflicts(sources)
+        if found is None:
+            return []  # call failed — don't cache, try again next time
+        cache["by_key"][key] = found
         _save(cache)
     return [{**c, "resolved": _resolved(c, state)} for c in cache["by_key"][key]]
 

@@ -1,9 +1,9 @@
-"""LLM calls: extract metadata from a PDF, answer a question, detect conflicts.
+"""LLM calls via OpenRouter: extract metadata from a PDF, answer a question, detect conflicts.
 
 The LLM writes the answer, maps claims to sources, extracts metadata and spots contradictions.
 It NEVER judges how trustworthy a source is — that stays deterministic in signals.py.
 
-With no ANTHROPIC_API_KEY (or MOCK_MODE=1) the app still runs: metadata falls back to the
+With no OPENROUTER_API_KEY (or MOCK_MODE=1) the app still runs: metadata falls back to the
 filename, answers quote the top source, and conflict detection returns nothing. Real use needs
 a key. All three functions return the same JSON shapes in mock and live mode.
 """
@@ -11,16 +11,14 @@ import json
 import os
 import re
 
-MODEL = os.environ.get("LLM_MODEL", "claude-sonnet-5-5")
+import requests
+
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
+MODEL = os.environ.get("LLM_MODEL", "nvidia/nemotron-3-super-120b-a12b:free")
 
 
 def is_mock():
-    return os.environ.get("MOCK_MODE") == "1" or not os.environ.get("ANTHROPIC_API_KEY")
-
-
-def _client():
-    import anthropic
-    return anthropic.Anthropic()
+    return os.environ.get("MOCK_MODE") == "1" or not os.environ.get("OPENROUTER_API_KEY")
 
 
 def _extract_json(text):
@@ -28,17 +26,26 @@ def _extract_json(text):
     return json.loads(m.group(0) if m else text)
 
 
+def _post(system, prompt, max_tokens):
+    r = requests.post(API_URL, timeout=120,
+        headers={"Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
+                 "Content-Type": "application/json"},
+        json={"model": os.environ.get("LLM_MODEL", MODEL), "max_tokens": max_tokens,
+              "messages": [{"role": "system", "content": system},
+                           {"role": "user", "content": prompt}]})
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"].get("content") or ""
+
+
 def _call_json(system, prompt, max_tokens=1500):
     """One call + one retry, returning parsed JSON or None."""
-    client = _client()
     for attempt in range(2):
-        msg = client.messages.create(
-            model=MODEL, max_tokens=max_tokens, system=system,
-            messages=[{"role": "user", "content": prompt if attempt == 0
-                       else prompt + "\n\nYour last reply was not valid JSON. Return ONLY the JSON."}])
         try:
-            return _extract_json(msg.content[0].text)
-        except (ValueError, json.JSONDecodeError):
+            text = _post(system, prompt if attempt == 0
+                         else prompt + "\n\nYour last reply was not valid JSON. Return ONLY the JSON.",
+                         max_tokens)
+            return _extract_json(text)
+        except (ValueError, KeyError, json.JSONDecodeError, requests.RequestException):
             continue
     return None
 
@@ -140,12 +147,15 @@ _CONFLICT_SYSTEM = (
 
 
 def detect_conflicts(sources):
-    """sources: list of {id, title, body}. Returns a list of conflict dicts."""
+    """sources: list of {id, title, body}. Returns a list of conflict dicts, or None if the
+    call failed (so callers can avoid caching a failure as 'no conflicts')."""
     if is_mock() or len(sources) < 2:
         return []
     block = "\n".join(f"[{s['id']}] {s.get('title', s['id'])}\n{s.get('body', '')[:2500]}\n"
                       for s in sources)
     data = _call_json(_CONFLICT_SYSTEM, f"Sources:\n{block}\n\nReturn the JSON list now.")
+    if data is None:
+        return None
     if isinstance(data, dict):
         data = data.get("conflicts", [])
     ids = {s["id"] for s in sources}
