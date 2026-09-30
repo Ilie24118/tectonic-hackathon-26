@@ -1,4 +1,30 @@
 {
-  "requests": [],
-  "overrides": {}
+  "requests": [
+    {
+      "doc_id": "sdworx-be-departure-holiday-pay",
+      "conflict_with": "sdworx-be-payroll-faq-2021",
+      "owner": "Payroll Expertise Centre BE",
+      "topic": "Departure holiday pay calculation",
+      "snippet_a": "Two periods are always taken into account: Previous calendar year (N-1) \u2014 rights vested through work in the prior year and not yet paid out through holidays taken in the current year. Current calendar year (N) \u2014 rights accrued from 1 January up to and including the last day of employment. Each period is settled at 15.34% of the gross earnings of that period: 7.67% simple holiday pay plus 7.67% double holiday pay.",
+      "snippet_b": "It is calculated on the current calendar year's earnings only. Take the gross earnings from January up to the leaving date and apply the 7.67% rate. The previous year is not relevant because holiday rights reset each January.",
+      "doc_version": "4.2",
+      "question": "An employee in Belgium earning 3,600 a month leaves on 30 April 2026. How much departure holiday pay we owe them?",
+      "country": "BE",
+      "client": "",
+      "id": "req-1",
+      "status": "updated",
+      "created": "2026-09-30",
+      "resolution": "Document updated by owner."
+    }
+  ],
+  "overrides": {
+    "sdworx-be-departure-holiday-pay": {
+      "last_verified": "2026-09-30",
+      "appended_text": "All good",
+      "version": 5
+    },
+    "sdworx-be-payroll-faq-2021": {
+      "superseded": true
+    }
+  }
 }
