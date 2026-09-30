@@ -12,8 +12,7 @@ import re
 from pypdf import PdfReader
 from rank_bm25 import BM25Okapi
 
-DATA = os.path.join(os.path.dirname(__file__), "..", "data")
-DOCS = os.path.join(DATA, "docs")
+from trust.config import DOCS, TEAMS
 
 
 def _empty_scope():
@@ -62,7 +61,7 @@ def _load_docs():
 
 def _load_teams():
     msgs = []
-    for path in sorted(glob.glob(os.path.join(DATA, "teams", "*.json"))):
+    for path in sorted(glob.glob(os.path.join(TEAMS, "*.json"))):
         for m in json.load(open(path, encoding="utf-8")):
             msgs.append({
                 "id": m["id"], "title": f"Teams {m['channel']} — {m['author']}",

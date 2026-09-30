@@ -10,8 +10,9 @@ import json
 import os
 
 from trust import llm
+from trust.config import DATA
 
-CACHE = os.path.join(os.path.dirname(__file__), "..", "data", "conflicts_found.json")
+CACHE = os.path.join(DATA, "conflicts_found.json")
 
 
 def _load():

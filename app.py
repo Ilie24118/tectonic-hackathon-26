@@ -8,13 +8,13 @@ from werkzeug.utils import secure_filename
 
 from trust import conflicts as conflicts_mod
 from trust import llm, state
+from trust.config import DATA, DOCS as DOCS_DIR
 from trust.context import apply_lens, detect_context
 from trust.retrieval import get_index, ingest_pdf
 from trust.signals import build_receipt
 
 load_dotenv()
 app = Flask(__name__)
-DOCS_DIR = os.path.join(os.path.dirname(__file__), "data", "docs")
 
 DEMO_Q = ""  # clean corpus: no pre-filled sample question
 
@@ -77,7 +77,10 @@ def who_knows(ans, in_scope, ctx):
     if not ans["gaps"]:
         return []
     import json
-    people = json.load(open(os.path.join(os.path.dirname(__file__), "data", "people.json")))
+    try:
+        people = json.load(open(os.path.join(DATA, "people.json"), encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
     owners = {it.get("owner") for it in in_scope if it.get("owner")}
     picks = []
     for p in people:

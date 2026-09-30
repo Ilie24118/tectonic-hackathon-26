@@ -3,7 +3,9 @@ import json
 import os
 from datetime import date
 
-STATE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "state.json")
+from trust.config import DATA
+
+STATE_PATH = os.path.join(DATA, "state.json")
 EMPTY = {"requests": [], "overrides": {}}
 
 

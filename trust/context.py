@@ -2,9 +2,8 @@
 import json
 import os
 
+from trust.config import DATA
 from trust.signals import scope_matches
-
-DATA = os.path.join(os.path.dirname(__file__), "..", "data")
 
 COUNTRIES = ["BE", "NL", "FR", "DE", "LU"]
 _COUNTRY_WORDS = {
@@ -16,7 +15,10 @@ _COUNTRY_WORDS = {
 
 
 def _clients():
-    return json.load(open(os.path.join(DATA, "clients.json"), encoding="utf-8"))
+    try:
+        return json.load(open(os.path.join(DATA, "clients.json"), encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
 
 
 def detect_context(question):

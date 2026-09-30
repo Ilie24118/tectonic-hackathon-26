@@ -71,6 +71,25 @@ re-index. That edit *is* the first act of taking ownership.
 **Reset between runs:** **Reset demo** in the header (clears owner confirmations + conflict cache;
 your imported PDFs stay).
 
+## Deploy on Vercel
+
+```bash
+npm i -g vercel        # if needed
+vercel                 # first deploy (link/create project)
+vercel --prod          # production
+```
+
+In the Vercel dashboard → Settings → Environment Variables, set `OPENROUTER_API_KEY`, `MOCK_MODE=0`,
+and optionally `LLM_MODEL`. The glue is `api/index.py` (serves the WSGI `app`) + `vercel.json`
+(routes everything to it, 60s function timeout for the LLM calls).
+
+**Serverless caveat:** Vercel's filesystem is read-only except `/tmp`, which is ephemeral. The app
+detects Vercel and puts all mutable state (`state.json`, the conflict cache, and imported PDFs)
+under `/tmp/trust-data`, seeded from the bundled `data/`. That means **imported documents and owner
+confirmations persist only while an instance stays warm and are wiped on cold starts** — fine for a
+live demo, not for real multi-user persistence (use a real store for that). Override the location
+with the `DATA_DIR` env var.
+
 ## How it works
 
 ```
