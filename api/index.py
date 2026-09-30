@@ -1,15 +1,11 @@
-"""Vercel serverless entrypoint. Vercel's Python runtime serves the WSGI `app`."""
+"""Vercel serverless entrypoint. @vercel/python serves the WSGI `app`.
+
+Legacy `routes` (see vercel.json) pass the original request path through as PATH_INFO,
+so Flask matches its routes directly — no prefix rewriting needed.
+"""
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import app as _flask_app  # noqa: E402
-
-
-def app(environ, start_response):
-    # ponytail: Vercel's rewrite forwards PATH_INFO="/api/index"; map it back to the real route.
-    path = environ.get("PATH_INFO", "")
-    if path.startswith("/api/index"):
-        environ["PATH_INFO"] = path[len("/api/index"):] or "/"
-    return _flask_app(environ, start_response)
+from app import app  # noqa: E402,F401
